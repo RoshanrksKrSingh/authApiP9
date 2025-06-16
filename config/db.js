@@ -9,10 +9,7 @@ const connectDB = async () => {
     if (mongoUri.startsWith("MONGO_URI=")) {
       mongoUri = mongoUri.replace("MONGO_URI=", "");
     }
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(mongoUri); 
     console.log('MongoDB connected');
   } catch (err) {
     console.error(err.message);
