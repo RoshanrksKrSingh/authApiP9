@@ -2,16 +2,10 @@ const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const generateToken = require('../utils/generateToken');
 const { generateOTP, validateOTP } = require('../services/otpService');
-const { sendEmail } = require('../services/emailService');
+// const { sendEmail } = require('../services/emailService');  // commented email for now
 const { JWT_SECRET } = require('../config/jwt');
 
-const { Vonage } = require('@vonage/server-sdk');
-
-const vonage = new Vonage({
-  apiKey: process.env.VONAGE_API_KEY,
-  apiSecret: process.env.VONAGE_API_SECRET,
-});
-const VONAGE_SENDER = process.env.VONAGE_SENDER || 'VonageAPIs';
+const { sendSMS } = require('../services/smsService');  // <-- Import SMS service
 
 const register = async (req, res) => {
   const { username, email, password } = req.body;
@@ -42,7 +36,7 @@ const login = async (req, res) => {
 };
 
 const forgotPassword = async (req, res) => {
-  const { email, phone } = req.body; // phone optional for SMS
+  const { email, phone } = req.body;
 
   try {
     const user = await User.findOne({ email });
@@ -53,41 +47,35 @@ const forgotPassword = async (req, res) => {
     user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
     await user.save();
 
-    // Prepare email HTML
+    // Email sending (commented for now)
+    /*
     const emailHtml = `
       <h2>Password Reset OTP</h2>
       <p>Your OTP is: <strong>${otp}</strong></p>
       <p>This OTP will expire in 10 minutes.</p>
     `;
 
-    // Send email using Mailgun
     const emailResult = await sendEmail({
       to: user.email,
       subject: 'Password Reset OTP',
       html: emailHtml,
     });
+    */
 
-    // Send SMS using Vonage if phone provided
+    // Send SMS if phone is provided
     let smsResult = null;
     if (phone) {
       const smsText = `Your OTP is ${otp}. It will expire in 10 minutes.`;
-      try {
-        smsResult = await vonage.sms.send({
-          to: phone,
-          from: VONAGE_SENDER,
-          text: smsText,
-        });
-        console.log('SMS sent:', smsResult);
-      } catch (smsErr) {
-        console.error('Error sending SMS:', smsErr);
+      smsResult = await sendSMS({ to: phone, text: smsText });
+
+      if (!smsResult.success) {
+        return res.status(500).json({ message: 'Failed to send OTP via SMS', error: smsResult.error });
       }
     }
 
-    if (emailResult.success) {
-      res.json({ message: 'OTP sent to email' + (phone ? ' and SMS' : '') });
-    } else {
-      res.status(500).json({ message: 'Failed to send OTP email', error: emailResult.error });
-    }
+    // You can update response as per SMS success
+    // For now, just respond success if SMS sent or no phone provided
+    res.json({ message: 'OTP sent successfully' + (phone ? ' via SMS' : '') });
   } catch (err) {
     console.error('Forgot Password Error:', err.message);
     res.status(500).json({ message: 'Error sending OTP' });

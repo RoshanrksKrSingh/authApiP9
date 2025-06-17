@@ -20,7 +20,8 @@
     "mongodb": "^6.17.0",
     "mongoose": "^8.15.2",
     "nodemailer": "^7.0.3",
-    "nodemailer-mailgun-transport": "^2.1.5"
+    "nodemailer-mailgun-transport": "^2.1.5",
+    "resend": "^4.6.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
