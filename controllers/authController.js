@@ -5,6 +5,14 @@ const { generateOTP, validateOTP } = require('../services/otpService');
 const { sendEmail } = require('../services/emailService');
 const { JWT_SECRET } = require('../config/jwt');
 
+const { Vonage } = require('@vonage/server-sdk');
+
+const vonage = new Vonage({
+  apiKey: process.env.VONAGE_API_KEY,
+  apiSecret: process.env.VONAGE_API_SECRET,
+});
+const VONAGE_SENDER = process.env.VONAGE_SENDER || 'VonageAPIs';
+
 const register = async (req, res) => {
   const { username, email, password } = req.body;
   try {
@@ -34,32 +42,51 @@ const login = async (req, res) => {
 };
 
 const forgotPassword = async (req, res) => {
-  const { email } = req.body;
+  const { email, phone } = req.body; // phone optional for SMS
+
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const otp = generateOTP();
     user.otp = otp;
-    user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
     await user.save();
 
+    // Prepare email HTML
     const emailHtml = `
       <h2>Password Reset OTP</h2>
       <p>Your OTP is: <strong>${otp}</strong></p>
       <p>This OTP will expire in 10 minutes.</p>
     `;
 
-    const result = await sendEmail({
+    // Send email using Mailgun
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'Password Reset OTP',
       html: emailHtml,
     });
 
-    if (result.success) {
-      res.json({ message: 'OTP sent to email' });
+    // Send SMS using Vonage if phone provided
+    let smsResult = null;
+    if (phone) {
+      const smsText = `Your OTP is ${otp}. It will expire in 10 minutes.`;
+      try {
+        smsResult = await vonage.sms.send({
+          to: phone,
+          from: VONAGE_SENDER,
+          text: smsText,
+        });
+        console.log('SMS sent:', smsResult);
+      } catch (smsErr) {
+        console.error('Error sending SMS:', smsErr);
+      }
+    }
+
+    if (emailResult.success) {
+      res.json({ message: 'OTP sent to email' + (phone ? ' and SMS' : '') });
     } else {
-      res.status(500).json({ message: 'Failed to send OTP', error: result.error });
+      res.status(500).json({ message: 'Failed to send OTP email', error: emailResult.error });
     }
   } catch (err) {
     console.error('Forgot Password Error:', err.message);
@@ -81,7 +108,7 @@ const verifyOTP = async (req, res) => {
     user.otpExpiry = null;
     await user.save();
 
-    // OTP verify ke baad temporary token
+    // OTP verified - create password reset token valid for 15 minutes
     const passwordResetToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '15m' });
 
     res.json({ message: 'OTP verified successfully', passwordResetToken });
