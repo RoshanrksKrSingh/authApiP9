@@ -1,28 +1,19 @@
-// const { Resend } = require('resend');
-// require('dotenv').config();
+const transporter = require('../config/mailer');
 
-// const resend = new Resend(process.env.RESEND_API_KEY);
+const sendEmail = async ({ to, subject, html }) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to,
+    subject,
+    html,
+  };
 
-// const sendEmail = async ({ to, subject, html }) => {
-//   try {
-//     const { data, error } = await resend.emails.send({
-//       from: process.env.RESEND_FROM_EMAIL, 
-//       to,
-//       subject,
-//       html,
-//     });
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    return { success: true, info };
+  } catch (error) {
+    return { success: false, error };
+  }
+};
 
-//     if (error) {
-//       console.error('Failed to send email:', error);
-//       return { success: false, error: error.message };
-//     }
-
-//     console.log('Email sent:', data.id);
-//     return { success: true, messageId: data.id };
-//   } catch (err) {
-//     console.error('Unexpected error:', err.message);
-//     return { success: false, error: err.message };
-//   }
-// };
-
-// module.exports = { sendEmail };
+module.exports = sendEmail;

@@ -2,21 +2,22 @@ const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const generateToken = require('../utils/generateToken');
 const { generateOTP, validateOTP } = require('../services/otpService');
-// const { sendEmail } = require('../services/emailService');  // commented email for now
+const sendEmail = require('../services/emailService'); 
+
 const { JWT_SECRET } = require('../config/jwt');
 
-const { sendSMS } = require('../services/smsService');  // <-- Import SMS service
+const { sendSMS } = require('../services/smsService');  
 
 const register = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password,firstname, lastname, phone} = req.body;
   try {
-    const user = new User({ username, email, password });
+    const user = new User({ username, email, password,firstname, lastname, phone });
     await user.save();
     const token = generateToken(user);
     res.status(201).json({ token });
   } catch (err) {
     console.error('Register Error:', err.message);
-    res.status(500).json({ message: 'Error registering user' });
+    res.status(500).json({ message: 'User Already Register' });
   }
 };
 
@@ -47,8 +48,6 @@ const forgotPassword = async (req, res) => {
     user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
     await user.save();
 
-    // Email sending (commented for now)
-    /*
     const emailHtml = `
       <h2>Password Reset OTP</h2>
       <p>Your OTP is: <strong>${otp}</strong></p>
@@ -60,9 +59,11 @@ const forgotPassword = async (req, res) => {
       subject: 'Password Reset OTP',
       html: emailHtml,
     });
-    */
 
-    // Send SMS if phone is provided
+    if (!emailResult.success) {
+      return res.status(500).json({ message: 'Failed to send OTP via email', error: emailResult.error });
+    }
+
     let smsResult = null;
     if (phone) {
       const smsText = `Your OTP is ${otp}. It will expire in 10 minutes.`;
@@ -73,9 +74,7 @@ const forgotPassword = async (req, res) => {
       }
     }
 
-    // You can update response as per SMS success
-    // For now, just respond success if SMS sent or no phone provided
-    res.json({ message: 'OTP sent successfully' + (phone ? ' via SMS' : '') });
+    res.json({ message: 'OTP sent successfully' + (phone ? ' via SMS and Email' : ' via Email') });
   } catch (err) {
     console.error('Forgot Password Error:', err.message);
     res.status(500).json({ message: 'Error sending OTP' });

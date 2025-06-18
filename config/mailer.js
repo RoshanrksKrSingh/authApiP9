@@ -1,22 +1,22 @@
-// const nodemailer = require('nodemailer');
-// const mg = require('nodemailer-mailgun-transport');
-// require('dotenv').config();
+const nodemailer = require('nodemailer');
+console.log("🚀 EMAIL_USER:", process.env.EMAIL_USER);
+console.log("🔒 EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Missing");
 
-// const auth = {
-//   auth: {
-//     api_key: process.env.MAILGUN_API_KEY,           
-//     domain: process.env.MAILGUN_DOMAIN,             
-//   }
-// };
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, 
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false 
+  }
+});
+;
+module.exports = transporter;
 
-// const transporter = nodemailer.createTransport(mg(auth));
 
-// transporter.verify((error, success) => {
-//   if (error) {
-//     console.error('Mailer config error:', error);
-//   } else {
-//     console.log('Mailer is ready to send emails');
-//   }
-// });
 
-// module.exports = transporter;
+
