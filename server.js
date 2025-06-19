@@ -6,7 +6,7 @@ const connectDB = require('./config/db');
 const cors = require('cors');
 app.use(cors());
 app.use(cors({
-  origin: 'http://127.0.0.1:5500', 
+  origin: "*",//'http://127.0.0.1:5500',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
