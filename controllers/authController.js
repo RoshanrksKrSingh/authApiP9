@@ -6,9 +6,14 @@ const sendEmail = require('../services/emailService');
 const { JWT_SECRET } = require('../config/jwt');
 const { sendSms } = require('../services/smsService');
 
-// ✅ REGISTER
+
 const register = async (req, res) => {
-  const { username, email, password, firstname, lastname, phone } = req.body;
+  const { username, email, password, firstname = "", lastname = "", phone = "" } = req.body;
+
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'Username, email, and password are required' });
+  }
+
   try {
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
@@ -27,7 +32,7 @@ const register = async (req, res) => {
       isVerified: false,
       otp,
       otpExpiry: new Date(Date.now() + 10 * 60 * 1000),
-      otpPurpose: 'registration' // ✅ Set OTP purpose
+      otpPurpose: 'registration'
     });
 
     await user.save();
@@ -49,17 +54,17 @@ const register = async (req, res) => {
       await sendSms({ to: phone, text: smsText });
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Registration successful. OTP sent via Email' + (phone ? ' and SMS.' : '.'),
       userId: user._id
     });
   } catch (err) {
     console.error('Register Error:', err.message);
-    res.status(500).json({ message: 'Registration failed', error: err.message });
+    return res.status(500).json({ message: 'Registration failed', error: err.message });
   }
 };
 
-// ✅ VERIFY REGISTRATION OTP
+
 const verifyRegistrationOTP = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -93,8 +98,6 @@ const verifyRegistrationOTP = async (req, res) => {
     res.status(500).json({ message: 'Verification failed' });
   }
 };
-
-// ✅ LOGIN
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -126,8 +129,6 @@ const login = async (req, res) => {
     res.status(500).json({ message: 'Error logging in' });
   }
 };
-
-// ✅ FORGOT PASSWORD
 const forgotPassword = async (req, res) => {
   const { email, phone } = req.body;
   try {
@@ -171,8 +172,6 @@ const forgotPassword = async (req, res) => {
     res.status(500).json({ message: 'Error sending OTP' });
   }
 };
-
-// ✅ VERIFY PASSWORD RESET OTP
 const verifyOTP = async (req, res) => {
   const { email, otp } = req.body;
   try {
@@ -202,8 +201,6 @@ const verifyOTP = async (req, res) => {
     res.status(500).json({ message: 'Error verifying OTP' });
   }
 };
-
-// ✅ RESET PASSWORD
 const resetPassword = async (req, res) => {
   const { passwordResetToken, newPassword } = req.body;
   try {
