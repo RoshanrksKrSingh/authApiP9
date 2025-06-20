@@ -8,96 +8,91 @@ const { sendSms } = require('../services/smsService');
 
 
 const register = async (req, res) => {
-  const { username, email, password, firstname = "", lastname = "", phone = "" } = req.body;
+  const { firstName, lastName, email, phone, password } = req.body;
 
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: 'Username, email, and password are required' });
+  // Basic field validation
+  if (!firstName || !lastName || !email || !phone || !password) {
+    return res.status(400).json({ message: 'All fields are required' });
   }
 
   try {
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      let conflictField = existingUser.email === email ? 'email' : 'username';
-      return res.status(409).json({ message: `User already exists with this ${conflictField}` });
+      return res.status(409).json({ message: 'Email already registered' });
     }
 
+    // Generate OTP
     const otp = generateOTP();
-    const user = new User({
-      username,
+
+    // Store registration details + OTP in session
+    req.session = req.session || {};
+    req.session.registrationOTP = {
+      firstName,
+      lastName,
       email,
-      password,
-      firstname,
-      lastname,
       phone,
-      isVerified: false,
+      password,
       otp,
-      otpExpiry: new Date(Date.now() + 10 * 60 * 1000),
-      otpPurpose: 'registration'
-    });
+      otpExpiry: Date.now() + 10 * 60 * 1000 // valid for 10 minutes
+    };
 
-    await user.save();
-
-    const emailHtml = `
-      <h2>Email Verification OTP</h2>
-      <p>Your OTP is: <strong>${otp}</strong></p>
-      <p>This OTP is valid for 10 minutes.</p>
-    `;
-
+    //Send OTP via email
     await sendEmail({
       to: email,
-      subject: 'Verify Your Email',
-      html: emailHtml,
+      subject: 'Your Registration OTP',
+      html: `<p>Your OTP is <strong>${otp}</strong></p><p>It is valid for 10 minutes.</p>`,
     });
 
-    if (phone) {
-      const smsText = `Your verification OTP is ${otp}. Valid for 10 minutes.`;
-      await sendSms({ to: phone, text: smsText });
-    }
+    // (Optional) SMS service (if needed)
+    // await sendSms(phoneNumber, `Your OTP is ${otp}`);
 
-    return res.status(201).json({
-      message: 'Registration successful. OTP sent via Email' + (phone ? ' and SMS.' : '.'),
-      userId: user._id
-    });
+    return res.status(200).json({ message: 'OTP sent to your email. Please verify to complete registration.' });
+
   } catch (err) {
-    console.error('Register Error:', err.message);
+    console.error('Registration Error:', err.message);
     return res.status(500).json({ message: 'Registration failed', error: err.message });
   }
 };
 
-
 const verifyRegistrationOTP = async (req, res) => {
-  const { email, otp } = req.body;
+  const { otp } = req.body;
+    console.log("Session object:", req.session); 
+  console.log("Incoming OTP:", otp); 
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: 'User already verified' });
-    }
+    const sessionData = req.session && req.session.registrationOTP;
 
     if (
-      user.otpPurpose !== 'registration' ||
-      !user.otp ||
-      user.otp !== otp ||
-      user.otpExpiry < new Date()
+      !sessionData ||
+      sessionData.otp !== otp ||
+      sessionData.otpExpiry < Date.now()
     ) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
-    user.isVerified = true;
-    user.otp = null;
-    user.otpExpiry = null;
-    user.otpPurpose = null;
+    // Save user to DB after OTP verification
+    const user = new User({
+      firstName: sessionData.firstName,
+      lastName: sessionData.lastName,
+      email: sessionData.email,
+      phone: sessionData.phone,
+      password: sessionData.password,
+      isVerified: true
+    });
 
     await user.save();
 
-    res.json({ message: 'User verified successfully. You can now login.' });
+    // Clear OTP from session
+    delete req.session.registrationOTP;
+
+    res.status(201).json({ message: 'Registration successful. You can now login.' });
   } catch (err) {
     console.error('OTP Verification Error:', err.message);
     res.status(500).json({ message: 'Verification failed' });
   }
 };
+
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
