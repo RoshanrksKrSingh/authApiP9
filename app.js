@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const MongoStore = require('connect-mongo'); 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const errorHandler = require('./middlewares/errorMiddleware');
@@ -10,15 +11,20 @@ const app = express();
 // JSON body parser middleware
 app.use(express.json());
 
-// Express-session middleware setup
+// MongoDB-backed session setup using connect-mongo
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',  // इसे .env में रखें बेहतर
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false, // Better for production
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    collectionName: 'sessions', // Optional
+    ttl: 60 * 10 // ⏱️ 10 minutes session expiry
+  }),
   cookie: {
-    maxAge: 10 * 60 * 1000,   // 10 minutes
+    maxAge: 10 * 60 * 1000, // 10 minutes
     httpOnly: true,
-    secure: false,            // localhost के लिए false, production में true with HTTPS
+    secure: false,          // Set true in production (HTTPS)
     sameSite: 'lax'
   }
 }));
