@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const errorHandler = require('./middlewares/errorMiddleware');
 require('dotenv').config();
+const isProd = process.env.NODE_ENV === 'production';
 
 const app = express();
 
@@ -42,10 +43,10 @@ app.use(session({
     ttl: 60 * 10
   }),
   cookie: {
-    maxAge: 10 * 60 * 1000,
     httpOnly: true,
-    secure: true,     
-    sameSite: 'none'    
+    secure: isProd,                  //  true in prod HTTPS, false in dev HTTP
+    sameSite: isProd ? 'none' : 'lax',  //  cross-origin in prod, easier in dev
+    maxAge: 10 * 60 * 1000
   }
 }));
 

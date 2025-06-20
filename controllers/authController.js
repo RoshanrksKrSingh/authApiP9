@@ -56,6 +56,11 @@ const register = async (req, res) => {
 };
 
 const verifyRegistrationOTP = async (req, res) => {
+    console.log('--- VERIFY OTP DEBUG START ---');
+  console.log('Request Cookies:', req.headers.cookie);
+  console.log('Session ID:', req.sessionID);
+  console.log('Session Object:', req.session);
+  console.log('--- VERIFY OTP DEBUG END ---');
   const { otp } = req.body;
 
   console.log("Session object:", req.session);
