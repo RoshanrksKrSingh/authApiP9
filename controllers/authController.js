@@ -57,8 +57,9 @@ const register = async (req, res) => {
 
 const verifyRegistrationOTP = async (req, res) => {
   const { otp } = req.body;
-    console.log("Session object:", req.session); 
-  console.log("Incoming OTP:", otp); 
+
+  console.log("Session object:", req.session);
+  console.log("Incoming OTP:", otp);
 
   try {
     const sessionData = req.session && req.session.registrationOTP;
@@ -71,8 +72,13 @@ const verifyRegistrationOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
+    // Auto-generate username using firstname and timestamp
+    const generatedUsername =
+      sessionData.firstName.toLowerCase() + Date.now().toString().slice(-6);
+
     // Save user to DB after OTP verification
     const user = new User({
+      username: generatedUsername, // 👈 Add this line
       firstName: sessionData.firstName,
       lastName: sessionData.lastName,
       email: sessionData.email,
@@ -92,6 +98,7 @@ const verifyRegistrationOTP = async (req, res) => {
     res.status(500).json({ message: 'Verification failed' });
   }
 };
+
 
 const login = async (req, res) => {
   const { email, password } = req.body;
