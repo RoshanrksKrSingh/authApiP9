@@ -13,7 +13,6 @@ const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:5500'];
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Postman और server-to-server requests के लिए origin undefined होता है
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
@@ -21,7 +20,7 @@ app.use(cors({
     }
     return callback(null, true);
   },
-  credentials: true,               // cookies को enable करने के लिए जरूरी
+  credentials: true,               
   methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 
@@ -41,10 +40,11 @@ app.use(session({
   cookie: {
     maxAge: 10 * 60 * 1000,
     httpOnly: true,
-    secure: false, // production में true (HTTPS के लिए)
-    sameSite: 'lax'
+    secure: true,     
+    sameSite: 'none'    
   }
 }));
+
 
 // Routes
 app.use('/api/auth', authRoutes);
