@@ -145,7 +145,7 @@ const forgotPassword = async (req, res) => {
     const otp = generateOTP();
     user.otp = otp;
     user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-    user.otpPurpose = 'reset'; // ✅ Set purpose
+    user.otpPurpose = 'reset'; // Set purpose
     await user.save();
 
     const emailHtml = `
