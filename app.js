@@ -10,21 +10,9 @@ const isProd = process.env.NODE_ENV === 'production';
 
 const app = express();
 
-const allowedOrigins = ['//http://localhost:5173/'];
-
-app.use(cors({  
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200 // For legacy browser support
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  credentials: true               
 }));
 // app.use(cors({
 //   origin: true,             //  Automatically reflect the origin from the request
