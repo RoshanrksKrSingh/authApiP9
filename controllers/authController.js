@@ -5,7 +5,7 @@ const generateToken = require('../utils/generateToken');
 const { generateOTP } = require('../services/otpService');
 const sendEmail = require('../services/emailService');
 const { JWT_SECRET } = require('../config/jwt');
-const { sendSms } = require('../services/smsService');
+
 
 // REGISTER: Save OTP + data in TempOtp collection instead of session
 const register = async (req, res) => {
@@ -43,10 +43,6 @@ const register = async (req, res) => {
       subject: 'Your Registration OTP',
       html: `<p>Your OTP is <strong>${otp}</strong></p><p>It is valid for 10 minutes.</p>`,
     });
-
-    // Optional SMS:
-    // await sendSms(phone, `Your OTP is ${otp}`);
-
     return res.status(200).json({ message: 'OTP sent to your email. Please verify to complete registration.' });
 
   } catch (err) {
@@ -129,7 +125,7 @@ const login = async (req, res) => {
 };
 
 const forgotPassword = async (req, res) => {
-  const { email, phone } = req.body;
+  const { email } = req.body;
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -154,18 +150,7 @@ const forgotPassword = async (req, res) => {
     if (!emailResult.success) {
       return res.status(500).json({ message: 'Failed to send OTP via email', error: emailResult.error });
     }
-
-    const phoneToUse = phone || user.phone;
-    if (phoneToUse) {
-      const smsText = `Your OTP is ${otp}. It will expire in 10 minutes.`;
-      const smsResult = await sendSms({ to: phoneToUse, text: smsText });
-
-      if (!smsResult.success) {
-        return res.status(500).json({ message: 'Failed to send OTP via SMS', error: smsResult.error });
-      }
-    }
-
-    res.json({ message: 'OTP sent successfully' + (phoneToUse ? ' via SMS and Email' : ' via Email') });
+      res.json({ message: 'OTP sent successfully via email.' });
   } catch (err) {
     console.error('Forgot Password Error:', err.message);
     res.status(500).json({ message: 'Error sending OTP' });
