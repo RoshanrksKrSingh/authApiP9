@@ -1,13 +1,19 @@
 const express = require('express');
-const { getProfile, updateProfile, deleteProfile } = require('../controllers/userController');
+const {
+  getProfile,
+  updateProfile,
+  deleteProfile
+} = require('../controllers/userController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 /**
  * @swagger
- * /api/users/profile:
+ * /api/user/profile:
  *   get:
  *     summary: Get user profile
+ *     tags:
+ *       - User
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -20,9 +26,11 @@ router.get('/profile', authMiddleware, getProfile);
 
 /**
  * @swagger
- * /api/users/profile:
+ * /api/user/profile:
  *   put:
  *     summary: Update user profile
+ *     tags:
+ *       - User
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -32,13 +40,19 @@ router.get('/profile', authMiddleware, getProfile);
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               username:
  *                 type: string
  *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               currentPassword:
  *                 type: string
  *     responses:
  *       200:
  *         description: Profile updated
+ *       400:
+ *         description: Bad request
  *       401:
  *         description: Unauthorized
  */
@@ -46,9 +60,11 @@ router.put('/profile', authMiddleware, updateProfile);
 
 /**
  * @swagger
- * /api/users/profile:
+ * /api/user/profile:
  *   delete:
  *     summary: Delete user profile
+ *     tags:
+ *       - User
  *     security:
  *       - bearerAuth: []
  *     responses:
