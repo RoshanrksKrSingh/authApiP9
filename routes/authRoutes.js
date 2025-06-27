@@ -15,45 +15,65 @@ console.log("Auth routes loaded");
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Register a new user
+ *     summary: Register a new user (saves to TempOtp)
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - email
+ *               - phone
+ *               - password
  *             properties:
- *               name:
+ *               firstName:
+ *                 type: string
+ *               lastName:
  *                 type: string
  *               email:
+ *                 type: string
+ *               phone:
  *                 type: string
  *               password:
  *                 type: string
  *     responses:
  *       200:
- *         description: OTP sent for verification
+ *         description: OTP sent to your email for verification
+ *       409:
+ *         description: Email already registered
+ *       400:
+ *         description: Missing fields
  */
+
 router.post('/register', register);
 
 /**
  * @swagger
  * /api/auth/verify-registration-otp:
  *   post:
- *     summary: Verify registration OTP
+ *     summary: Verify registration OTP and create user account
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - otp
  *             properties:
  *               email:
  *                 type: string
  *               otp:
  *                 type: string
  *     responses:
- *       200:
- *         description: Registration successful
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Invalid or expired OTP
  */
 router.post('/verify-registration-otp', verifyRegistrationOTP);
 
@@ -68,6 +88,9 @@ router.post('/verify-registration-otp', verifyRegistrationOTP);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - password
  *             properties:
  *               email:
  *                 type: string
@@ -75,7 +98,11 @@ router.post('/verify-registration-otp', verifyRegistrationOTP);
  *                 type: string
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: Login successful, returns JWT token
+ *       400:
+ *         description: Invalid credentials
+ *       403:
+ *         description: User not verified
  */
 router.post('/login', login);
 
@@ -83,19 +110,23 @@ router.post('/login', login);
  * @swagger
  * /api/auth/forgot-password:
  *   post:
- *     summary: Send OTP to reset password
+ *     summary: Request OTP for password reset
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
  *             properties:
  *               email:
  *                 type: string
  *     responses:
  *       200:
- *         description: OTP sent
+ *         description: OTP sent successfully via email
+ *       404:
+ *         description: User not found
  */
 router.post('/forgot-password', forgotPassword);
 
@@ -103,13 +134,16 @@ router.post('/forgot-password', forgotPassword);
  * @swagger
  * /api/auth/verify-otp:
  *   post:
- *     summary: Verify OTP for password reset
+ *     summary: Verify OTP for password reset and get reset token
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - otp
  *             properties:
  *               email:
  *                 type: string
@@ -117,29 +151,39 @@ router.post('/forgot-password', forgotPassword);
  *                 type: string
  *     responses:
  *       200:
- *         description: OTP verified
+ *         description: OTP verified successfully, token returned
+ *       400:
+ *         description: Invalid or expired OTP
+ *       404:
+ *         description: User not found
  */
 router.post('/verify-otp', verifyOTP);
-
 /**
  * @swagger
  * /api/auth/set-new-password:
  *   post:
- *     summary: Set a new password using reset token
+ *     summary: Set a new password using a reset token
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - passwordResetToken
+ *               - newPassword
  *             properties:
- *               newPassword:
+ *               passwordResetToken:
  *                 type: string
- *               resetToken:
+ *               newPassword:
  *                 type: string
  *     responses:
  *       200:
- *         description: Password reset successful
+ *         description: Password reset successfully
+ *       400:
+ *         description: Invalid or expired reset token
+ *       404:
+ *         description: User not found
  */
 router.post('/set-new-password', resetPassword);
 
