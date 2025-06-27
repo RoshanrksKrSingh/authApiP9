@@ -15,5 +15,15 @@ const options = {
 };
 
 const swaggerSpec = swaggerJsdoc(options);
+options.definition.components = {
+  securitySchemes: {
+    bearerAuth: {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+    }
+  }
+};
+options.definition.security = [{ bearerAuth: [] }];
 
 module.exports = { swaggerUi, swaggerSpec };
