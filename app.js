@@ -7,17 +7,20 @@ const userRoutes = require('./routes/userRoutes');
 const errorHandler = require('./middlewares/errorMiddleware');
 require('dotenv').config();
 const isProd = process.env.NODE_ENV === 'production';
+const { swaggerUi, swaggerSpec } = require('./swagger'); 
 
 const app = express();
 
-app.use(cors({
-  origin: 'http://localhost:5173', 
-  credentials: true               
-}));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // app.use(cors({
-//   origin: true,             //  Automatically reflect the origin from the request
-//   credentials: true         // Allow cookies
+//   origin: 'http://localhost:5173', 
+//   credentials: true               
 // }));
+app.use(cors({
+  origin: true,             //  Automatically reflect the origin from the request
+  credentials: true         // Allow cookies
+}));
 
 // JSON body parser middleware
 app.use(express.json());
