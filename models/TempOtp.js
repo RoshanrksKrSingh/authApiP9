@@ -27,7 +27,7 @@ const tempOtpSchema = new mongoose.Schema({
     type: String,
     required: true // Make sure this is already hashed before storing
   },
-  expiresAt: {
+  otpExpiry: {
     type: Date,
     required: true
   }
